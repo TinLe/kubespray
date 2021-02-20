@@ -2,6 +2,9 @@
 - name: kubeadm | Check if old apiserver cert exists on host
   stat:
     path: "{{ kube_cert_dir }}/apiserver.pem"
+    get_attributes: no
+    get_checksum: no
+    get_mime: no
   register: old_apiserver_cert
   delegate_to: "{{ groups['kube-master'] | first }}"
   run_once: true
@@ -24,12 +27,18 @@
 - name: kubeadm | Check serviceaccount key
   stat:
     path: "{{ kube_cert_dir }}/sa.key"
+    get_attributes: no
+    get_checksum: yes
+    get_mime: no
   register: sa_key_before
   run_once: true
 
 - name: kubeadm | Check if kubeadm has already run
   stat:
     path: "/var/lib/kubelet/config.yaml"
+    get_attributes: no
+    get_checksum: no
+    get_mime: no
   register: kubeadm_already_run
 
 - name: kubeadm | Delete old admin.conf
@@ -156,8 +165,7 @@
   until: kubeadm_init is succeeded or "field is immutable" in kubeadm_init.stderr
   when: inventory_hostname == groups['kube-master']|first and not kubeadm_already_run.stat.exists
   failed_when: kubeadm_init.rc != 0 and "field is immutable" not in kubeadm_init.stderr
-  environment:
-    PATH: "{{ bin_dir }}:{{ ansible_env.PATH }}"
+  environment: '{{ proxy_disable_env | combine({"PATH": "{{ bin_dir }}:{{ ansible_env.PATH }}"}) }}'
   notify: Master | restart kubelet
 
 - name: set kubeadm certificate key
@@ -172,6 +180,7 @@
   shell: >-
     {{ bin_dir }}/kubeadm --kubeconfig /etc/kubernetes/admin.conf token delete {{ kubeadm_token }} || :;
     {{ bin_dir }}/kubeadm --kubeconfig /etc/kubernetes/admin.conf token create {{ kubeadm_token }}
+  environment: "{{ proxy_disable_env }}"
   changed_when: false
   when:
     - inventory_hostname == groups['kube-master']|first
@@ -182,6 +191,7 @@
 
 - name: Create kubeadm token for joining nodes with 24h expiration (default)
   command: "{{ bin_dir }}/kubeadm --kubeconfig /etc/kubernetes/admin.conf token create"
+  environment: "{{ proxy_disable_env }}"
   changed_when: false
   register: temp_token
   retries: 5
@@ -211,6 +221,9 @@
 - name: kubeadm | Check serviceaccount key again
   stat:
     path: "{{ kube_cert_dir }}/sa.key"
+    get_attributes: no
+    get_checksum: yes
+    get_mime: no
   register: sa_key_after
   run_once: true
 
