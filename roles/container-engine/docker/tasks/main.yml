@@ -103,6 +103,7 @@
   module_defaults:
     apt:
       update_cache: true
+      dpkg_options: "allow-downgrades"
     dnf:
       enablerepo: "{{ docker_package_info.enablerepo | default(omit) }}"
     yum:
