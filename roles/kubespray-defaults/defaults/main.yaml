@@ -15,10 +15,10 @@ is_fedora_coreos: false
 disable_swap: true
 
 ## Change this to use another Kubernetes version, e.g. a current beta release
-kube_version: v1.20.5
+kube_version: v1.20.7
 
 ## The minimum version working
-kube_version_min_required: v1.18.0
+kube_version_min_required: v1.19.0
 
 ## Kube Proxy mode One of ['iptables','ipvs']
 kube_proxy_mode: ipvs
@@ -147,8 +147,8 @@ kube_log_level: 2
 kube_network_plugin: calico
 kube_network_plugin_multus: false
 
-# Determines if calico-rr group exists
-peer_with_calico_rr: "{{ 'calico-rr' in groups and groups['calico-rr']|length > 0 }}"
+# Determines if calico_rr group exists
+peer_with_calico_rr: "{{ 'calico_rr' in groups and groups['calico_rr']|length > 0 }}"
 
 # Choose data store type for calico: "etcd" or "kdd" (kubernetes datastore)
 calico_datastore: "kdd"
@@ -265,7 +265,8 @@ docker_container_storage_setup: false
 ## Otherwise docker-storage-setup will be executed incorrectly.
 # docker_container_storage_setup_devs: /dev/vdb
 
-## Uncomment this if you have more than 3 nameservers, then we'll only use the first 3.
+## Only set this if you have more than 3 nameservers:
+## If true Kubespray will only use the first 3, otherwise it will fail
 docker_dns_servers_strict: false
 
 # Path used to store Docker data
@@ -309,7 +310,13 @@ docker_plugins: []
 etcd_kubeadm_enabled: false
 
 # Containerd options
-containerd_use_systemd_cgroup: false
+containerd_version: >-
+  {%- if ansible_os_family == "Debian" and ansible_distribution_release == "stretch" -%}
+  1.4.3
+  {%- else -%}
+  1.4.4
+  {%- endif -%}
+containerd_use_systemd_cgroup: true
 
 # Settings for containerized control plane (etcd/kubelet/secrets)
 # deployment type for legacy etcd mode
@@ -333,6 +340,7 @@ dashboard_enabled: false
 
 # Addons which can be enabled
 helm_enabled: false
+krew_enabled: false
 registry_enabled: false
 metrics_server_enabled: false
 enable_network_policy: true
@@ -353,6 +361,9 @@ ingress_alb_enabled: false
 cert_manager_enabled: false
 expand_persistent_volumes: false
 metallb_enabled: false
+
+# containerd official CLI tool
+nerdctl_enabled: false
 
 ## When OpenStack is used, Cinder version can be explicitly specified if autodetection fails (Fixed in 1.9: https://github.com/kubernetes/kubernetes/issues/50461)
 # openstack_blockstorage_version: "v1/v2/auto (default)"
@@ -381,6 +392,7 @@ openstack_lbaas_monitor_max_retries: "3"
 openstack_cacert: "{{ lookup('env','OS_CACERT') }}"
 
 # Default values for the external OpenStack Cloud Controller
+external_openstack_enable_ingress_hostname: false
 external_openstack_lbaas_create_monitor: false
 external_openstack_lbaas_monitor_delay: "1m"
 external_openstack_lbaas_monitor_timeout: "30s"
@@ -414,6 +426,7 @@ kubelet_protect_kernel_defaults: true
 ## List of key=value pairs that describe feature gates for
 ## the k8s cluster.
 kube_feature_gates: []
+kubeadm_feature_gates: []
 
 # Local volume provisioner storage classes
 # Levarages Ansibles string to Python datatype casting. Otherwise the dict_key isn't substituted

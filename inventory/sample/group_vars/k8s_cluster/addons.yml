@@ -110,11 +110,13 @@ ingress_publish_status_address: ""
 #   53: "kube-system/coredns:53"
 # ingress_nginx_extra_args:
 #   - --default-ssl-certificate=default/foo-tls
+# ingress_nginx_class: nginx
 
 # ambassador ingress controller deployment
 ingress_ambassador_enabled: false
 # ingress_ambassador_namespace: "ambassador"
 # ingress_ambassador_version: "*"
+# ingress_ambassador_multi_namespaces: false
 
 # ALB ingress controller deployment
 ingress_alb_enabled: false
@@ -130,6 +132,7 @@ cert_manager_enabled: false
 
 # MetalLB deployment
 metallb_enabled: false
+metallb_speaker_enabled: true
 # metallb_ip_range:
 #   - "10.5.0.50-10.5.0.99"
 # metallb_speaker_nodeselector:
@@ -173,3 +176,7 @@ metallb_enabled: false
 #   - peer_address: 192.0.2.2
 #     peer_asn: 64513
 #     my_asn: 4200000000
+
+# The plugin manager for kubectl
+krew_enabled: false
+krew_root_dir: "/usr/local/krew"

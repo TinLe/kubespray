@@ -28,6 +28,7 @@
     src: "{{ etcd_cert_dir }}/{{ item.s }}"
     dest: "{{ calico_cert_dir }}/{{ item.d }}"
     state: hard
+    mode: 0640
     force: yes
   with_items:
     - {s: "{{ kube_etcd_cacert_file }}", d: "ca_cert.crt"}
@@ -125,6 +126,7 @@
       assemble:
         src: "{{ local_release_dir }}/calico-{{ calico_version }}-kdd-crds"
         dest: "{{ kube_config_dir }}/kdd-crds.yml"
+        delimiter: "---\n"
         regexp: ".*\\.yaml"
         remote_src: true
 
@@ -178,7 +180,6 @@
   when:
     - inventory_hostname == groups['kube_control_plane'][0]
     - calico_conf_ipv6.stdout is defined and calico_conf_ipv6.stdout == "0"
-    - calico_version is version("v3.3.0", ">=")
     - enable_dual_stack_networks | bool
 
 - name: Populate Service External IPs
@@ -187,12 +188,18 @@
   with_items: "{{ calico_advertise_service_external_ips }}"
   run_once: yes
 
+- name: Populate Service LoadBalancer IPs
+  set_fact:
+    _service_loadbalancer_ips: "{{ _service_loadbalancer_ips|default([]) + [ {'cidr': item} ] }}"
+  with_items: "{{ calico_advertise_service_loadbalancer_ips }}"
+  run_once: yes
+
 - name: "Determine nodeToNodeMesh needed state"
   set_fact:
     nodeToNodeMeshEnabled: "false"
   when:
     - peer_with_router|default(false) or peer_with_calico_rr|default(false)
-    - inventory_hostname in groups['k8s-cluster']
+    - inventory_hostname in groups['k8s_cluster']
   run_once: yes
 
 - name: Calico | Set up BGP Configuration
@@ -207,10 +214,12 @@
           "name": "default",
       },
       "spec": {
+          "listenPort": {{ calico_bgp_listen_port }},
           "logSeverityScreen": "Info",
           {% if not calico_no_global_as_num|default(false) %}"asNumber": {{ global_as_num }},{% endif %}
           "nodeToNodeMeshEnabled": {{ nodeToNodeMeshEnabled|default('true') }} ,
           {% if calico_advertise_cluster_ips|default(false) %}"serviceClusterIPs": [{"cidr": "{{ kube_service_addresses }}" }],{% endif %}
+          {% if calico_version is version('v3.18.0', '>') and calico_advertise_service_loadbalancer_ips|length > 0  %}"serviceLoadBalancerIPs": {{ _service_loadbalancer_ips }},{% endif %}
           "serviceExternalIPs": {{ _service_external_ips|default([]) }} }}
   changed_when: false
   when:
@@ -225,7 +234,7 @@
       {"apiVersion": "projectcalico.org/v3",
       "kind": "BGPPeer",
       "metadata": {
-        "name": "global-{{ item.router_id }}"
+        "name": "global-{{ item.name | default(item.router_id|replace(':','-')) }}"
       },
       "spec": {
         "asNumber": "{{ item.as }}",
@@ -262,7 +271,7 @@
   until: output.rc == 0
   delay: "{{ retry_stagger | random + 3 }}"
   with_items:
-    - "{{ groups['calico-rr'] | default([]) }}"
+    - "{{ groups['calico_rr'] | default([]) }}"
   when:
     - inventory_hostname == groups['kube_control_plane'][0]
     - peer_with_calico_rr|default(false)
@@ -288,7 +297,7 @@
   until: output.rc == 0
   delay: "{{ retry_stagger | random + 3 }}"
   with_items:
-    - "{{ groups['calico-rr'] | default([]) }}"
+    - "{{ groups['calico_rr'] | default([]) }}"
   when:
     - inventory_hostname == groups['kube_control_plane'][0]
     - peer_with_calico_rr|default(false)
@@ -366,9 +375,9 @@
   delay: "{{ retry_stagger | random + 3 }}"
   when:
     - peer_with_router|default(false)
-    - inventory_hostname in groups['k8s-cluster']
+    - inventory_hostname in groups['k8s_cluster']
     - local_as is defined
-    - groups['calico-rr'] | default([]) | length == 0
+    - groups['calico_rr'] | default([]) | length == 0
 
 - name: Calico | Configure peering with router(s) at node scope
   command:
@@ -379,7 +388,7 @@
       {"apiVersion": "projectcalico.org/v3",
       "kind": "BGPPeer",
       "metadata": {
-        "name": "{{ inventory_hostname }}-{{ item.router_id }}"
+        "name": "{{ inventory_hostname }}-{{ item.name | default(item.router_id|replace(':','-')) }}"
       },
       "spec": {
         "asNumber": "{{ item.as }}",
@@ -394,4 +403,4 @@
     - "{{ peers|selectattr('scope','undefined')|list|default([]) | union(peers|selectattr('scope','defined')|selectattr('scope','equalto', 'node')|list|default([])) }}"
   when:
     - peer_with_router|default(false)
-    - inventory_hostname in groups['k8s-cluster']
+    - inventory_hostname in groups['k8s_cluster']
