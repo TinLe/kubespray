@@ -66,7 +66,7 @@ quay_image_repo: "quay.io"
 
 # TODO(mattymo): Move calico versions to roles/network_plugins/calico/defaults
 # after migration to container download
-calico_version: "v3.17.4"
+calico_version: "v3.18.4"
 calico_ctl_version: "{{ calico_version }}"
 calico_cni_version: "{{ calico_version }}"
 calico_policy_version: "{{ calico_version }}"
@@ -349,21 +349,21 @@ cni_binary_checksums:
   amd64: 962100bbc4baeaaa5748cdbfce941f756b1531c2eadb290129401498bfac21e7
 calicoctl_binary_checksums:
   arm:
-    v3.18.3: 0
+    v3.19.1: 0
+    v3.18.4: 0
     v3.17.4: 0
-    v3.16.10: 0
   amd64:
-    v3.18.3: 03c31b84c99f03e2c5118985da502bd7c492461e8180e7cb00fb8a98fdd9aff3
+    v3.19.1: e50980e9ceb6e3d37751cba2d871d76264c702c205824ae53584c97e2ad726fc
+    v3.18.4: 6ae74a5b9478476c957d4ed4a07ce059521b0c1492aba45f7d59214adc9b547a
     v3.17.4: dbd6e9d548577a8d940f353ac28100b6dc7471ccf099e6194fce733a153dfe45
-    v3.16.10: 4078311aaf8c7efd642a82b1c3a8b7b9ef9a7eb0d94fc03f4dce88789e40e35b
   arm64:
-    v3.18.3: 24e9f847a4b8677322c087e9ee878aa85700909a02629001d2fe48b37f48c65c
+    v3.19.1: 0bc3cb144deae5536065f48267ad80a340b917b9304bb20ef3ef64ef323372c0
+    v3.18.4: 0dd24c2c561f4ea48134143464dc9fa6a5fd9917b7a00b5e2da12baa98a83b6b
     v3.17.4: 84595b2d154f65e64c1b7ce5cdb678400d4c1e1023dc1910b59b9aa2878d5b5b
-    v3.16.10: 1ccd3c2ab79eabbf6975edb92eab4ca516141e6fa4e76f1f7ed037dc53910b7e
 calico_crds_archive_checksums:
-  v3.18.3: 6db4634d174167c85f4dfa5ce8607a8d8590625ddc3fd34a4ef5d8c7a94724de
+  v3.19.1: 2a1b3f8933c9045d46f4c433224500ee67092844dee212e45482ea927694f0b3
+  v3.18.4: 047a62e7653d4a2d13931123867b14d3292e4ab5c307cd8750a0160d767801e3
   v3.17.4: 92b9d37dcebe382a8e43d4384cfcceb5c9bc22459a2f8cdd89ab7c41b09a7532
-  v3.16.10: a4627285afe5761a2681452bfcc858ec998ba2dae3060283b81b5ae3f7ea386b
 
 krew_archive_checksums:
   v0.4.1: a26deea175f70264260d59a4e061778a892f8a8e301ac261660dd7d24c551c99
@@ -382,12 +382,12 @@ crun_checksums:
     0.16: a16508a9c15a2aa898d6ba18bbc394cd37cdb4e3968f177f2fbb7b70a8a0f4fb
     0.17: af99d543a41c5ef441e9e653b60392e8d6988a56762819a6959031e3154e94c1
     0.18: e94578c013eae98b0a50477f6bc77963a7c85145bf280da39f9855d69d9cab53
-    0.19: bb12a7e1f3c8d5e29527f9cc4d18ec18724607d108bb0d276340014ea22569c8
+    0.19: 01331478858af57ff45ef7d980f9c5a45e387833591c2345a7e8f7125dfbd833
   arm64:
     0.16: 0
     0.17: 0
     0.18: e580157bc8f87114a2f1d8ac28f8a7c4a588dfa21969fc99f78919cb9bf3ed0a
-    0.19: 18ee1f2e50ba07dc0e8c35c86cd4c8990942a2adebaabfc20e26e11db4b01a28
+    0.19: 0471944e093dd3340a6807e55702959aaafabe1597ed7ea0ef512abb6f27914b
 
 kata_containers_binary_checksums:
   arm:
@@ -492,7 +492,7 @@ haproxy_image_tag: 2.3
 # bundle with kubeadm; if not 'basic' upgrade can sometimes fail
 coredns_image_is_namespaced: "{{ (kube_major_version | regex_replace('^v', '') | float) >= 1.21 }}"
 
-coredns_version: "v1.7.0"
+coredns_version: "v1.8.0"
 coredns_image_repo: "{{ kube_image_repo }}{{'/coredns/coredns' if (coredns_image_is_namespaced | bool) else '/coredns' }}"
 coredns_image_tag: "{{ coredns_version if (coredns_image_is_namespaced | bool) else (coredns_version | regex_replace('^v', '')) }}"
 
